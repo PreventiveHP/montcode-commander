@@ -10,51 +10,48 @@
         .pill-anim { animation: bounce 1s infinite; font-size: 80px; filter: drop-shadow(0 0 25px #00ffff); }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
         .bg-med { background-color: #001a1a !important; border: 4px solid #00ffff !important; }
-        body { background-color: black; }
-        .transition-custom { transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
+        body { background-color: black; transition: all 0.7s ease; }
     </style>
 </head>
-<body id="b" class="text-white flex items-center justify-center min-h-screen transition-custom">
+<body id="b" class="text-white flex items-center justify-center min-h-screen">
 
-    <div id="card" class="text-center p-12 border border-zinc-800 rounded-[4rem] bg-zinc-900/20 shadow-2xl max-w-sm w-full mx-4 transition-custom">
+    <div id="card" class="text-center p-12 border border-zinc-800 rounded-[4rem] bg-zinc-900/20 shadow-2xl max-w-sm w-full mx-4">
         <div id="p" class="hidden pill-anim mb-8">💊</div>
         <p id="label" class="text-zinc-600 text-[10px] font-black uppercase tracking-[0.4em] mb-4">System Standby</p>
         <p id="m" class="text-4xl font-black italic uppercase leading-none tracking-tighter text-zinc-500">Waiting for Dr...</p>
-        <button onclick="location.reload()" id="ackBtn" class="hidden mt-12 text-zinc-500 text-[9px] font-bold uppercase tracking-widest border border-zinc-800 px-10 py-4 rounded-full hover:text-white hover:border-zinc-500 transition-all active:scale-95">
+        
+        <button onclick="location.reload()" id="ackBtn" 
+            class="hidden mt-12 text-zinc-500 text-[9px] font-bold uppercase tracking-widest border border-zinc-800 px-10 py-4 rounded-full hover:text-white hover:border-zinc-500 transition-all">
             Acknowledge Instruction ×
         </button>
     </div>
 
     <script>
-        const pusher = new Pusher('284fc98940a4b6d4c359', { cluster: 'us2', forceTLS: true });
+        // Configuración idéntica a tu relay.js
+        const pusher = new Pusher('284fc98940a4b6d4c359', { 
+            cluster: 'us2',
+            forceTLS: true 
+        });
+
         const channel = pusher.subscribe("test-channel");
 
         channel.bind('test-event', function(data) {
-            // AUDITORÍA: Acepta 'text' o 'message' para asegurar compatibilidad
+            // AUDITORÍA: Captura 'text' que es lo que envía tu relay.js
             const txt = data.text || data.message;
             if(!txt) return;
 
-            const mainMsg = document.getElementById('m');
-            const pill = document.getElementById('p');
-            const body = document.getElementById('b');
-            const card = document.getElementById('card');
-            const label = document.getElementById('label');
-            const btn = document.getElementById('ackBtn');
-
-            mainMsg.innerText = txt;
-            mainMsg.className = "text-4xl font-black italic uppercase leading-none text-white animate-pulse";
-            label.innerText = "New Clinical Instruction:";
-            label.className = "text-blue-400 text-[10px] font-black uppercase tracking-[0.4em] mb-4";
-            btn.classList.remove('hidden');
+            document.getElementById('m').innerText = txt;
+            document.getElementById('m').className = "text-4xl font-black italic uppercase text-white animate-pulse";
+            document.getElementById('label').innerText = "New Clinical Instruction:";
+            document.getElementById('label').className = "text-blue-400 text-[10px] font-black uppercase mb-4";
+            document.getElementById('ackBtn').classList.remove('hidden');
             
             const lowerTxt = txt.toLowerCase();
-            const isMedication = lowerTxt.includes('losartan') || lowerTxt.includes('mg') || lowerTxt.includes('pill');
-            
-            if(isMedication) {
-                body.classList.add('bg-med');
-                card.style.borderColor = "#00ffff";
-                pill.classList.remove('hidden');
+            if(lowerTxt.includes('losartan') || lowerTxt.includes('mg') || lowerTxt.includes('pill')) {
+                document.getElementById('b').classList.add('bg-med');
+                document.getElementById('p').classList.remove('hidden');
             }
+
             if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
         });
     </script>
