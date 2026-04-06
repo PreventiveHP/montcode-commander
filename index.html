@@ -2,64 +2,110 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>MONTCODE COMMANDER - PACIENTE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONTCODE COMMANDER - PATIENT NODE</title>
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
-        /* Animación mejorada de la cápsula */
-        .pill-anim { animation: bounce 1s infinite; font-size: 80px; filter: drop-shadow(0 0 20px #00ffff); }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
-        /* Fondo de alerta médica */
-        .bg-med { background-color: #001a1a !important; border: 4px solid #00ffff !important; }
+        /* Animación táctica de la cápsula */
+        .pill-anim { 
+            animation: bounce 1s infinite; 
+            font-size: 80px; 
+            filter: drop-shadow(0 0 25px #00ffff); 
+        }
+        @keyframes bounce { 
+            0%, 100% { transform: translateY(0); } 
+            50% { transform: translateY(-30px); } 
+        }
+
+        /* Estado de Alerta Médica Activa */
+        .bg-med { 
+            background-color: #001a1a !important; 
+            border: 4px solid #00ffff !important; 
+        }
+
+        /* Tipografía y suavizado */
+        body { background-color: black; }
+        .transition-custom { transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
-<body id="b" class="bg-black text-white flex items-center justify-center min-h-screen transition-all duration-700">
+<body id="b" class="text-white flex items-center justify-center min-h-screen transition-custom">
 
-    <div id="card" class="text-center p-12 border border-zinc-800 rounded-[4rem] bg-zinc-900/20 shadow-2xl max-w-sm w-full mx-4">
+    <div id="card" class="text-center p-12 border border-zinc-800 rounded-[4rem] bg-zinc-900/20 shadow-2xl max-w-sm w-full mx-4 transition-custom">
         <div id="p" class="hidden pill-anim mb-8">💊</div>
-        <p id="label" class="text-zinc-600 text-[10px] font-black uppercase tracking-[0.4em] mb-4">System Standby</p>
-        <p id="m" class="text-4xl font-black italic uppercase leading-none tracking-tighter">Waiting for Dr...</p>
         
-        <button onclick="location.reload()" id="ackBtn" class="hidden mt-12 text-zinc-500 text-[9px] font-bold uppercase tracking-widest border border-zinc-800 px-10 py-4 rounded-full hover:text-white hover:border-zinc-500 transition-all">
-            Confirm Order ×
+        <p id="label" class="text-zinc-600 text-[10px] font-black uppercase tracking-[0.4em] mb-4">System Standby</p>
+        
+        <p id="m" class="text-4xl font-black italic uppercase leading-none tracking-tighter text-zinc-500">
+            Waiting for Dr...
+        </p>
+        
+        <button onclick="location.reload()" id="ackBtn" 
+            class="hidden mt-12 text-zinc-500 text-[9px] font-bold uppercase tracking-widest border border-zinc-800 px-10 py-4 rounded-full hover:text-white hover:border-zinc-500 transition-all active:scale-95">
+            Acknowledge Instruction ×
         </button>
     </div>
 
     <script>
-        // Configuración de Pusher
-        const pusher = new Pusher('284fc98940a4b6d4c359', { cluster: 'us2' });
+        // Inicialización de Pusher con tus llaves
+        const pusher = new Pusher('284fc98940a4b6d4c359', { 
+            cluster: 'us2',
+            forceTLS: true 
+        });
+
         const channel = pusher.subscribe("test-channel");
 
+        // Escuchar el evento del Dr
         channel.bind('test-event', function(data) {
-            // Extraemos el texto (soportando ambos formatos de envío)
+            // Extraer el texto sin importar si viene como 'text' o 'message'
             const txt = data.text || data.message;
             if(!txt) return;
 
             const mainMsg = document.getElementById('m');
             const pill = document.getElementById('p');
             const body = document.getElementById('b');
+            const card = document.getElementById('card');
             const label = document.getElementById('label');
             const btn = document.getElementById('ackBtn');
 
-            // Actualizar interfaz
+            // 1. Actualizar el Texto
             mainMsg.innerText = txt;
             mainMsg.className = "text-4xl font-black italic uppercase leading-none text-white animate-pulse";
             label.innerText = "New Clinical Instruction:";
+            label.className = "text-blue-400 text-[10px] font-black uppercase tracking-[0.4em] mb-4";
+            
+            // 2. Mostrar botón de confirmación
             btn.classList.remove('hidden');
             
-            // Lógica de Triage Táctico (Detección de Medicina)
-            const isMed = txt.toLowerCase().includes('losartan') || txt.toLowerCase().includes('mg');
+            // 3. Lógica de Triage (Detección de Medicación)
+            // Se activa si el mensaje contiene nombres de medicación o unidades
+            const lowerTxt = txt.toLowerCase();
+            const isMedication = lowerTxt.includes('losartan') || 
+                                 lowerTxt.includes('mg') || 
+                                 lowerTxt.includes('pill') || 
+                                 lowerTxt.includes('tab');
             
-            if(isMed) {
+            if(isMedication) {
                 body.classList.add('bg-med');
+                card.style.borderColor = "#00ffff";
                 pill.classList.remove('hidden');
             } else {
+                // Mensaje informativo/nota general
                 body.classList.remove('bg-med');
+                card.style.borderColor = "#3b82f6"; // Azul para notas
                 pill.classList.add('hidden');
             }
 
-            // Alerta táctil si el dispositivo lo permite
-            if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+            // 4. Feedback Háptico (Vibración)
+            if (navigator.vibrate) {
+                navigator.vibrate([300, 100, 300]);
+            }
+        });
+
+        // Log de conexión para depuración en consola
+        pusher.connection.bind('state_change', function(states) {
+            console.log("Pusher State:", states.current);
         });
     </script>
 </body>
