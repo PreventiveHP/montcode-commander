@@ -8,50 +8,44 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-black text-white flex items-center justify-center min-h-screen">
-
     <div class="text-center p-10 border-2 border-zinc-800 rounded-[3rem] bg-zinc-900/50 max-w-sm w-full">
-        <p id="label" class="text-zinc-600 text-[10px] font-black uppercase tracking-widest mb-4 text-center">Status: Listening...</p>
-        
-        <p id="m" class="text-4xl font-black italic uppercase text-zinc-700 transition-all duration-500">
-            Waiting for Dr...
-        </p>
+        <p id="label" class="text-zinc-600 text-[10px] font-black uppercase tracking-widest mb-4">Radio Status</p>
+        <p id="m" class="text-4xl font-black italic uppercase text-zinc-700 transition-all">Waiting...</p>
     </div>
 
     <script>
-        // 2. Sintonizamos la radio con tu llave
+        // 1. CONEXIÓN FORZADA
         const pusher = new Pusher('284fc98940a4b6d4c359', { 
             cluster: 'us2',
             forceTLS: true 
         });
 
-        // 3. Nos conectamos al canal exacto que usa tu relay.js
+        // 2. SUSCRIPCIÓN AL CANAL
         const channel = pusher.subscribe("test-channel");
 
-        // 4. Reaccionamos cuando el Dr. envía el evento
-        channel.bind('test-event', function(data) {
-            console.log("¡LLEGÓ ALGO!", data);
-            
-            // Extraemos el texto (tu relay envía 'text')
-            const textoRecibido = data.text || data.message;
-            
-            if(textoRecibido) {
-                const display = document.getElementById('m');
-                const label = document.getElementById('label');
-                
-                // Actualizamos la pantalla al instante
-                display.innerText = textoRecibido;
-                display.className = "text-4xl font-black italic uppercase text-[#ccff00] animate-pulse";
-                label.innerText = "NEW INSTRUCTION RECEIVED:";
-                label.className = "text-blue-400 text-[10px] font-black uppercase mb-4";
-                
-                // Vibración para avisar al paciente
-                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-            }
+        // Confirmar conexión en pantalla
+        pusher.connection.bind('connected', () => {
+            document.getElementById('label').innerText = "ONLINE - READY FOR DR";
+            document.getElementById('label').className = "text-green-500 text-[10px] font-black uppercase tracking-widest mb-4";
         });
 
-        // Verificador para saber si estamos conectados (míralo en F12)
-        pusher.connection.bind('connected', () => {
-            console.log("CONECTADO A PUSHER - LISTO PARA RECIBIR");
+        // 3. ESCUCHA ACTIVA DEL EVENTO
+        channel.bind('test-event', function(data) {
+            // No importa si viene como 'text' o 'message', lo atrapamos
+            const msg = data.text || data.message || "INSTRUCCIÓN RECIBIDA";
+            
+            const display = document.getElementById('m');
+            display.innerText = msg;
+            display.className = "text-4xl font-black italic uppercase text-[#ccff00] animate-pulse";
+            
+            // Alerta visual agresiva para estar seguros
+            document.body.style.backgroundColor = "#001a1a";
+        });
+
+        // Si hay error de conexión, avísame
+        pusher.connection.bind('error', function(err) {
+            document.getElementById('label').innerText = "CONNECTION ERROR";
+            document.getElementById('label').className = "text-red-500 text-[10px] font-black uppercase tracking-widest mb-4";
         });
     </script>
 </body>
