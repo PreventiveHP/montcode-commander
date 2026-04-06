@@ -1,51 +1,71 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MONTCODE COMMANDER</title>
-    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-black text-white flex items-center justify-center min-h-screen">
-    <div class="text-center p-10 border-2 border-zinc-800 rounded-[3rem] bg-zinc-900/50 max-w-sm w-full">
-        <p id="label" class="text-zinc-600 text-[10px] font-black uppercase tracking-widest mb-4">Radio Status</p>
-        <p id="m" class="text-4xl font-black italic uppercase text-zinc-700 transition-all">Waiting...</p>
+<body class="bg-black text-white flex items-center justify-center min-h-screen transition-colors duration-500" id="main-body">
+    <div class="text-center p-10 border-2 border-zinc-800 rounded-[3rem] bg-zinc-900/50 max-w-sm w-full shadow-2xl">
+        <p id="label" class="text-zinc-600 text-[10px] font-black uppercase tracking-widest mb-4 italic">Radio Status</p>
+        <p id="m" class="text-4xl font-black italic uppercase text-zinc-800 transition-all leading-tight">Waiting...</p>
     </div>
 
-    <script>
-        // 1. CONEXIÓN FORZADA
-        const pusher = new Pusher('284fc98940a4b6d4c359', { 
-            cluster: 'us2',
-            forceTLS: true 
-        });
+    <script type="module">
+        // 1. Importamos las librerías de Google
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 2. SUSCRIPCIÓN AL CANAL
-        const channel = pusher.subscribe("test-channel");
+        // 2. Tus llaves maestras de MontCode (Las mismas de la Station One)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVIQ4S-w4Ag40uYuArW3o7Hw2XQwoQV7U",
+            authDomain: "montcode-e02c7.firebaseapp.com",
+            databaseURL: "https://montcode-e02c7-default-rtdb.firebaseio.com",
+            projectId: "montcode-e02c7",
+            storageBucket: "montcode-e02c7.firebasestorage.app",
+            messagingSenderId: "988300151844",
+            appId: "1:988300151844:web:b1a31275a9555de98a9cb1"
+        };
 
-        // Confirmar conexión en pantalla
-        pusher.connection.bind('connected', () => {
-            document.getElementById('label').innerText = "ONLINE - READY FOR DR";
-            document.getElementById('label').className = "text-green-500 text-[10px] font-black uppercase tracking-widest mb-4";
-        });
+        // 3. Inicializamos la conexión
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-        // 3. ESCUCHA ACTIVA DEL EVENTO
-        channel.bind('test-event', function(data) {
-            // No importa si viene como 'text' o 'message', lo atrapamos
-            const msg = data.text || data.message || "INSTRUCCIÓN RECIBIDA";
+        // Referencias a los elementos de la pantalla
+        const label = document.getElementById('label');
+        const display = document.getElementById('m');
+        const body = document.getElementById('main-body');
+
+        // 4. ESCUCHA ACTIVA (ON VALUE)
+        // Este es el "oído" que nunca duerme
+        const mensajeRef = ref(db, 'mensaje_dr');
+
+        onValue(mensajeRef, (snapshot) => {
+            const data = snapshot.val();
             
-            const display = document.getElementById('m');
-            display.innerText = msg;
-            display.className = "text-4xl font-black italic uppercase text-[#ccff00] animate-pulse";
-            
-            // Alerta visual agresiva para estar seguros
-            document.body.style.backgroundColor = "#001a1a";
-        });
+            if (data && data.texto) {
+                // Actualizamos el estado a ONLINE
+                label.innerText = "LINK ACTIVE - MESSAGE RECEIVED";
+                label.className = "text-[#ccff00] text-[10px] font-black uppercase tracking-widest mb-4 animate-pulse";
 
-        // Si hay error de conexión, avísame
-        pusher.connection.bind('error', function(err) {
-            document.getElementById('label').innerText = "CONNECTION ERROR";
-            document.getElementById('label').className = "text-red-500 text-[10px] font-black uppercase tracking-widest mb-4";
+                // Mostramos el mensaje del Doctor
+                display.innerText = data.texto;
+                display.className = "text-4xl font-black italic uppercase text-[#ccff00] transition-all duration-300 scale-105";
+                
+                // Alerta visual de fondo (el azul oscuro que tenías)
+                body.style.backgroundColor = "#001a1a";
+                
+                console.log("Nueva instrucción médica recibida:", data.texto);
+            } else {
+                // Estado inicial si no hay mensaje
+                label.innerText = "ONLINE - WAITING FOR DR";
+                label.className = "text-blue-500 text-[10px] font-black uppercase tracking-widest mb-4";
+            }
+        }, (error) => {
+            console.error("Error de conexión:", error);
+            label.innerText = "CONNECTION ERROR";
+            label.className = "text-red-500 text-[10px] font-black uppercase tracking-widest mb-4";
         });
     </script>
 </body>
