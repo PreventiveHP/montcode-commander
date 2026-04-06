@@ -27,32 +27,47 @@
     </div>
 
     <script>
-        // Configuración idéntica a tu relay.js
+        // AUDITORÍA DE CONEXIÓN
         const pusher = new Pusher('284fc98940a4b6d4c359', { 
             cluster: 'us2',
             forceTLS: true 
         });
 
+        // Sintonizamos el canal exacto del relay.js
         const channel = pusher.subscribe("test-channel");
 
+        // Escuchamos el evento exacto del relay.js
         channel.bind('test-event', function(data) {
-            // AUDITORÍA: Captura 'text' que es lo que envía tu relay.js
+            console.log("Mensaje recibido:", data); // Esto saldrá en F12 para confirmar
+
+            // Extraemos 'text' que es como lo envía tu motor
             const txt = data.text || data.message;
             if(!txt) return;
 
-            document.getElementById('m').innerText = txt;
-            document.getElementById('m').className = "text-4xl font-black italic uppercase text-white animate-pulse";
-            document.getElementById('label').innerText = "New Clinical Instruction:";
-            document.getElementById('label').className = "text-blue-400 text-[10px] font-black uppercase mb-4";
-            document.getElementById('ackBtn').classList.remove('hidden');
+            const mainMsg = document.getElementById('m');
+            const pill = document.getElementById('p');
+            const body = document.getElementById('b');
+            const label = document.getElementById('label');
+            const btn = document.getElementById('ackBtn');
+
+            mainMsg.innerText = txt;
+            mainMsg.className = "text-4xl font-black italic uppercase text-white animate-pulse";
+            label.innerText = "New Clinical Instruction:";
+            label.className = "text-blue-400 text-[10px] font-black uppercase mb-4";
+            btn.classList.remove('hidden');
             
             const lowerTxt = txt.toLowerCase();
             if(lowerTxt.includes('losartan') || lowerTxt.includes('mg') || lowerTxt.includes('pill')) {
-                document.getElementById('b').classList.add('bg-med');
-                document.getElementById('p').classList.remove('hidden');
+                body.classList.add('bg-med');
+                pill.classList.remove('hidden');
             }
 
             if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+        });
+
+        // Verificador de estado en consola
+        pusher.connection.bind('state_change', function(states) {
+            console.log("Pusher Status:", states.current);
         });
     </script>
 </body>
