@@ -1,65 +1,34 @@
  <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>MONTCODE COMMANDER - PATIENT NODE</title>
+    <title>MONTCODE COMMANDER - PACIENTE</title>
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .pill-bounce { animation: bounce 1.2s infinite; font-size: 80px; }
+        .pill-anim { animation: bounce 1s infinite; font-size: 80px; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-        .bg-active { background-color: #001a1a !important; border: 3px solid #00ffff !important; }
+        .bg-med { background-color: #001a1a !important; border: 3px solid #00ffff !important; }
     </style>
 </head>
-<body id="mainBody" class="bg-black text-white flex items-center justify-center min-h-screen transition-all duration-500">
-
-    <div id="card" class="text-center p-12 border-2 border-zinc-900 rounded-[4rem] w-full max-w-sm bg-zinc-900/20 shadow-2xl">
-        <div id="pill" class="hidden pill-bounce mb-6">💊</div>
-        
-        <p id="label" class="text-zinc-600 text-[10px] font-black uppercase tracking-[0.3em] mb-3">System Standby</p>
-        <p id="msg" class="text-3xl font-black uppercase italic leading-none text-zinc-400">Waiting for Dr...</p>
-        
-        <button onclick="location.reload()" id="btn" class="hidden mt-10 text-zinc-500 text-[9px] font-bold uppercase tracking-widest border border-zinc-800 px-8 py-3 rounded-full hover:text-white transition-all">
-            Acknowledge Instruction ×
-        </button>
+<body id="b" class="bg-black text-white flex items-center justify-center min-h-screen transition-all">
+    <div class="text-center p-12 border border-zinc-800 rounded-[3rem] bg-zinc-900/20">
+        <div id="p" class="hidden pill-anim mb-6">💊</div>
+        <p id="m" class="text-3xl font-black italic uppercase">Waiting for Dr...</p>
     </div>
 
     <script>
-        // Conexión al mismo canal que usa el Dr.
         const pusher = new Pusher('284fc98940a4b6d4c359', { cluster: 'us2' });
         const channel = pusher.subscribe("test-channel");
 
         channel.bind('test-event', function(data) {
-            const content = data.text || data.message;
-            if(!content) return;
-
-            const body = document.getElementById('mainBody');
-            const card = document.getElementById('card');
-            const pill = document.getElementById('pill');
-            const msg = document.getElementById('msg');
-            const label = document.getElementById('label');
-            const btn = document.getElementById('btn');
-
-            // Mostrar el texto (letras o números)
-            msg.innerText = content;
-            msg.className = "text-3xl font-black uppercase italic leading-none text-white";
-            label.innerText = "New Clinical Note:";
-            btn.classList.remove('hidden');
-
-            // Filtro visual: Si detecta medicina activa el modo cian y la cápsula
-            const lowerContent = content.toLowerCase();
-            if(lowerContent.includes('losartan') || lowerContent.includes('mg') || lowerContent.includes('pill')) {
-                body.classList.add('bg-active');
-                card.style.borderColor = "#00ffff";
-                pill.classList.remove('hidden');
-            } else {
-                body.classList.remove('bg-active');
-                card.style.borderColor = "#18181b";
-                pill.classList.add('hidden');
+            const txt = data.text;
+            document.getElementById('m').innerText = txt;
+            
+            // Si el Dr manda medicina, activamos la cápsula
+            if(txt.toLowerCase().includes('losartan') || txt.toLowerCase().includes('mg')) {
+                document.getElementById('b').classList.add('bg-med');
+                document.getElementById('p').classList.remove('hidden');
             }
-
-            // Vibración táctica
-            if(navigator.vibrate) navigator.vibrate([400, 100, 400]);
         });
     </script>
 </body>
